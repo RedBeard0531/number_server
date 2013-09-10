@@ -1,6 +1,13 @@
-import webapp2
 from google.appengine.ext import ndb
 from webob.exc import HTTPNotFound, HTTPConflict
+
+import os
+import webapp2
+import jinja2
+
+JINJA_ENVIRONMENT = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+    extensions=['jinja2.ext.autoescape'])
 
 class Counter(ndb.Model):
     value = ndb.IntegerProperty(required=True)
@@ -13,10 +20,11 @@ class Counter(ndb.Model):
         return counter
 
 class MainPage(webapp2.RequestHandler):
-
     def get(self):
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write('Hello, bob')
+        self.response.headers['Content-Type'] = 'text/html'
+        counters = list(Counter.query())
+        template = JINJA_ENVIRONMENT.get_template('index.html')
+        self.response.write(template.render(counters=counters))
 
 
 class Numbers(webapp2.RequestHandler):
@@ -41,7 +49,6 @@ class Numbers(webapp2.RequestHandler):
 
         self.response.headers['Content-Type'] = 'text/plain'
         self.response.write(str(counter.value))
-
 
     def get(self, key):
         counter = Counter.get_or_error(key)
